@@ -4,7 +4,11 @@
 
 using namespace std;
 
-int sign(const float n) {
+static constexpr int WINDOW_HEIGHT{1600};
+static constexpr int WINDOW_WIGHT{2560};
+static constexpr int ARENA_RADIUS{750};
+
+static int sign(const float n) {
     if (n > 0)
         return 1;
     if (n < 0)
@@ -24,7 +28,7 @@ public:
     float rotation_velocity{};
 
     explicit Rocket(const sf::Vector2f position) : position(position) {
-        sprite.setOrigin(sf::Vector2f(50, 73));
+        sprite.setOrigin(sf::Vector2f(73, 50));
     }
 
     void tick(const float delta) {
@@ -33,7 +37,7 @@ public:
         sprite.setPosition(position);
         sprite.setRotation(sf::radians(rotation));
 
-        if ((sf::Vector2f(1280, 800) - position).length() >= 1500) {
+        if ((sf::Vector2f(1280, 800) - position).length() >= ARENA_RADIUS) {
             position.x = 1280;
             position.y = 800;
             rotation_velocity = 0;
@@ -77,10 +81,16 @@ public:
 };
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode({2560, 1600}), "Rocket Quest", sf::State::Fullscreen);
+    sf::RenderWindow window(sf::VideoMode({WINDOW_WIGHT, WINDOW_HEIGHT}), "Rocket Quest", sf::State::Fullscreen);
 
-    Rocket rocket{sf::Vector2f(400, 400)};
-    RocketController rocket_controller{&rocket};
+    Rocket rocket{sf::Vector2f(WINDOW_WIGHT / 2.f, WINDOW_HEIGHT / 2.f)};
+    const RocketController rocket_controller{&rocket};
+
+    sf::CircleShape circle{ARENA_RADIUS};
+    circle.setFillColor(sf::Color::Black);
+    circle.setPosition(sf::Vector2f(WINDOW_WIGHT / 2.0f - ARENA_RADIUS, WINDOW_HEIGHT / 2.0f - ARENA_RADIUS));
+    circle.setOutlineThickness(3);
+    circle.setOutlineColor(sf::Color::White);
 
     sf::Clock clock;
     while (window.isOpen()) {
@@ -91,6 +101,7 @@ int main() {
         }
 
         window.clear(sf::Color(0, 0, 0));
+        window.draw(circle);
 
         rocket.tick(delta);
         rocket_controller.tick(delta);

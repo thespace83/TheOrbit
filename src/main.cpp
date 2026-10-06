@@ -1,96 +1,42 @@
-#include <iostream>
 #include <SFML/Graphics.hpp>
-#include <cmath>
+#include "Rails.h"
 
 using namespace std;
 
-static constexpr int WINDOW_HEIGHT{1600};
-static constexpr int WINDOW_WIGHT{2560};
-static constexpr int ARENA_RADIUS{750};
+static constexpr int WINDOW_HEIGHT{800};
+static constexpr int WINDOW_WIGHT{800};
 
-static int sign(const float n) {
-    if (n > 0)
-        return 1;
-    if (n < 0)
-        return -1;
-    return 0;
-}
 
-class Rocket {
+class Field {
+    sf::Texture *grid_texture;
+    sf::Sprite *grid_sprite;
+
 public:
-    sf::Vector2f position;
-    sf::Vector2f velocity{};
-    sf::Texture texture{"rocket.png"};
-    sf::Sprite sprite{texture};
-    float engine_power{1000};
-    float RCS_power{3};
-    float rotation{};
-    float rotation_velocity{};
+    sf::Vector2f position{};
+    float scale{1};
 
-    explicit Rocket(const sf::Vector2f position) : position(position) {
-        sprite.setOrigin(sf::Vector2f(73, 50));
+    Field() {
+        grid_texture = new sf::Texture("assets/grid.png");
+        grid_sprite = new sf::Sprite(*grid_texture);
     }
 
-    void tick(const float delta) {
-        position += velocity * delta;
-        rotation += rotation_velocity * delta;
-        sprite.setPosition(position);
-        sprite.setRotation(sf::radians(rotation));
-
-        if ((sf::Vector2f(1280, 800) - position).length() >= ARENA_RADIUS) {
-            position.x = 1280;
-            position.y = 800;
-            rotation_velocity = 0;
-            velocity.x = 0;
-            velocity.y = 0;
+    void draw_grid(sf::RenderWindow &window) const {
+        for (int y{}; y < WINDOW_HEIGHT / 64 + 1; y++) {
+            for (int x{}; x < WINDOW_WIGHT / 64 + 1; x++) {
+                grid_sprite->setPosition(sf::Vector2f(x * 64, y * 64));
+                window.draw(*grid_sprite);
+            }
         }
-    }
-
-    void draw(sf::RenderWindow &window) const {
-        window.draw(sprite);
     }
 };
 
-class RocketController {
-    Rocket *rocket;
-
-public:
-    explicit RocketController(Rocket *rocket) {
-        this->rocket = rocket;
-    }
-
-    void tick(const float delta) const {
-        bool controlling_rotation{};
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) {
-            rocket->rotation_velocity += delta * rocket->RCS_power;
-            controlling_rotation = true;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
-            rocket->rotation_velocity -= delta * rocket->RCS_power;
-            controlling_rotation = true;
-        }
-        if (!controlling_rotation) {
-            rocket->rotation_velocity += delta * rocket->RCS_power * -static_cast<float>(
-                sign(rocket->rotation_velocity));
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
-            rocket->velocity += sf::Vector2f(cos(rocket->rotation), sin(rocket->rotation)) * delta * rocket->
-                    engine_power;
-        }
-    }
-};
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode({WINDOW_WIGHT, WINDOW_HEIGHT}), "Rocket Quest", sf::State::Fullscreen);
+    sf::RenderWindow window(sf::VideoMode({WINDOW_WIGHT, WINDOW_HEIGHT}), "My Trains"); //, sf::State::Fullscreen);
 
-    Rocket rocket{sf::Vector2f(WINDOW_WIGHT / 2.f, WINDOW_HEIGHT / 2.f)};
-    const RocketController rocket_controller{&rocket};
+    const Field field{};
 
-    sf::CircleShape circle{ARENA_RADIUS};
-    circle.setFillColor(sf::Color::Black);
-    circle.setPosition(sf::Vector2f(WINDOW_WIGHT / 2.0f - ARENA_RADIUS, WINDOW_HEIGHT / 2.0f - ARENA_RADIUS));
-    circle.setOutlineThickness(3);
-    circle.setOutlineColor(sf::Color::White);
+    Rails rails{sf::Vector2f(100, 100), sf::Vector2f(700, 300)};
 
     sf::Clock clock;
     while (window.isOpen()) {
@@ -101,11 +47,9 @@ int main() {
         }
 
         window.clear(sf::Color(0, 0, 0));
-        window.draw(circle);
+        field.draw_grid(window);
 
-        rocket.tick(delta);
-        rocket_controller.tick(delta);
-        rocket.draw(window);
+        rails.draw(window);
 
         window.display();
     }
